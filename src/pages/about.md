@@ -1,37 +1,29 @@
 ---
 layout: ../layouts/AboutLayout.astro
-title: "About"
+title: "About Me"
 ---
 
-AstroPaper is a minimal, accessible and SEO-friendly blog theme built with [Astro](https://astro.build/) and [Tailwind CSS](https://tailwindcss.com/).
+Heya, I'm Jie! (Or you can call me Frances, the name comes from the film 'Frances Ha'). I'm a software developer based in London atm :)
 
-![Astro Paper](public/astropaper-og.jpg)
+<div class="flex gap-4 justify-center">
+  <img src="/swiss.jpg" alt="Image 1" class="w-80" />
+  <img src="/denmark.jpg" alt="Image 2" class="w-80" />
+</div>
 
-AstroPaper provides a solid foundation for blogs, or even portfolios\_ with full markdown support, built-in dark mode, and a clean layout that works out-of-the-box.
+Being a liberal arts student in languages and journalism for the first 23 years of my life is extremely rewarding. It made me appreaciate the beauty and power of words and structure, helped me make sense of the world in a profound way.
 
-The blog posts in this theme also serve as guides, docs or example articles\_ making AstroPaper a flexible starting point for your next content-driven site.
+These aesthetic standards extends to areas such as architecture, graphic design, animations, video editing etc. I quickly got facscinated by the world of games, which is a combination of all of these sub-genres.
 
-## Features
+As Covid hit, I got into 3D modeling and animations in Blender, game design and development in Unity and C#. That's where everything started.
 
-AstroPaper comes with a set of useful features that make content publishing easy and effective:
+Now I work in Finance, building modern platforms that facilitates metals trading. Currently working in C# and .NET. It might sounds boring, yet it is actually way more intersting than it sounds!
 
-- SEO-friendly
-- Fast performance
-- Light & dark mode
-- Highly customizable
-- Organizable blog posts
-- Responsive & accessible
-- Static search with [PageFind](https://pagefind.app/)
-- Automatic social image generation
+Now that I've made this 'tech blog', coding has become part of my life, and I do it after work for fun. But trust me, I do have other interests (maybe too much) in life.
 
-and so much more.
+When I'm not coding, you can find me practising keyboard/guitar, hiking in the countryside, travelling with a budget, being obsessed with 3D printing, crocheting (never finished any ambitious piece I planned), walking in the same local park for the 267th time, or just doom scrolling cat videos in bed.
 
-## Show your support
+---
 
-If you like [AstroPaper](https://github.com/satnaing/astro-paper), consider giving it a star ⭐️.
+Butter the toast, eat the toast, shit the toast.
 
-Found a bug 🐛 or have an improvement ✨ in mind? Feel free to open an [issue](https://github.com/satnaing/astro-paper/issues), submit a [pull request](https://github.com/satnaing/astro-paper/pulls) or start a [discussion](https://github.com/satnaing/astro-paper/discussions).
-
-If you find this theme helpful, you can also [sponsor me on GitHub](https://github.com/sponsors/satnaing) or [buy me a coffee](https://buymeacoffee.com/satnaing) to show your support — every penny counts.
-
-Kyay zuu! 🙏🏼
+I'm just a normal, functioning memebr of the human race who's trying to make ends meet. There is no way anyone can prove otherwise.
