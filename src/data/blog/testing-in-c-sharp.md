@@ -1,14 +1,15 @@
 ---
-author: Keqi Chen
-pubDatetime: 2025-11-01T21:40:00Z
-modDatetime: 2025-11-01T00:16:00Z
-title: React Caching Mechanism — useMemo and useCallback
-slug: usememo-and-usecallback
+author: Frances Fu
+pubDatetime: 2026-02-08T21:40:00Z
+modDatetime: 2025-02-08T00:16:00Z
+title: TDD, BDD and DDD in Software Development
+slug: testing approaches
 featured: true
 draft: false
 tags:
-  - ReactJs
-description: useMemo and useCallback are caching mechanisms built into React. In this post, I'll explain how they work, when they're actually useful (and when they're not).
+  - Testing
+  - C#
+description: TDD, BDD and DDD are different approaches in software development that emphasize testing and collaboration. I'll explain the difference in this post with concrete code examples.
 ---
 
 ## Table of contents

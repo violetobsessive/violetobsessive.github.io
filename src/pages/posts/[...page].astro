@@ -8,7 +8,10 @@ import Footer from "@/components/Footer.astro";
 import Card from "@/components/Card.astro";
 import Pagination from "@/components/Pagination.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
+import IconRss from "@/assets/icons/IconRss.svg";
+import Socials from "@/components/Socials.astro";
 import { SITE } from "@/config";
+import { SOCIALS } from "@/constants";
 
 export const getStaticPaths = (async ({ paginate }) => {
   const posts = await getCollection("blog", ({ data }) => !data.draft);
@@ -20,10 +23,50 @@ const { page } = Astro.props;
 
 <Layout title={`Posts | ${SITE.title}`}>
   <Header />
-  <Main pageTitle="Posts" pageDesc="All the articles I've posted.">
-    <ul>
-      {page.data.map(data => <Card {...data} />)}
-    </ul>
+  <Main>
+    <section id="hero" class:list={["pt-2 pb-6", "border-b border-border"]}>
+      <h1
+        class="my-4 mt-2 inline-block text-4xl font-bold sm:mt-3 sm:mb-5 sm:text-5xl"
+      >
+        Hi!
+      </h1>
+      <a
+        target="_blank"
+        href="/rss.xml"
+        class="inline-block"
+        aria-label="rss feed"
+        title="RSS Feed"
+      >
+        <IconRss
+          width={20}
+          height={20}
+          class="scale-125 stroke-accent stroke-3 rtl:-rotate-90"
+        />
+        <span class="sr-only">RSS Feed</span>
+      </a>
+
+      <p>
+        You've reached Jie's workspace, where I write about software
+        development. Mostly an archive against my gradually declining brain
+        power.
+      </p>
+      {
+        // only display if at least one social link is enabled
+        SOCIALS.length > 0 && (
+          <div class="mt-4 flex max-sm:flex-col sm:items-center">
+            <div class="me-2 mb-1 whitespace-nowrap sm:mb-0">Social Links:</div>
+            <Socials />
+          </div>
+        )
+      }
+    </section>
+
+    <section id="posts" class:list={["pt-12 pb-6"]}>
+      <h2 class="text-2xl font-semibold tracking-wide">Posts</h2>
+      <ul>
+        {page.data.map(data => <Card {...data} />)}
+      </ul>
+    </section>
   </Main>
 
   <Pagination {page} />
