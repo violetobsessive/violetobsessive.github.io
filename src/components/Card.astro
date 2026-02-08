@@ -16,18 +16,34 @@ const { title, description, ...props } = data;
 <li class="my-6">
   <a
     href={getPath(id, filePath)}
+    aria-label={title}
+    style={{ borderColor: "#987fdb" }}
     class:list={[
-      "inline-block text-lg font-medium text-accent",
-      "decoration-dashed underline-offset-4 hover:underline",
-      "focus-visible:no-underline focus-visible:underline-offset-0",
+      // Card container
+      "card-shade",
+      "card-border",
+      "group border-skin-line bg-skin-fill block rounded-2xl border",
+      "p-6 shadow-sm transition",
+      "hover:-translate-y-0.5 hover:shadow-md",
+      "focus-visible:ring-offset-skin-fill focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
     ]}
   >
     <Heading
       style={{ viewTransitionName: slugifyStr(title.replaceAll(".", "-")) }}
+      class:list={[
+        "text-skin-base text-xl font-semibold",
+        "group-hover:text-accent",
+      ]}
     >
       {title}
     </Heading>
+
+    <div class="text-skin-muted mt-2 text-sm">
+      <Datetime {...props} />
+    </div>
+
+    <p class="text-skin-base/90 mt-3">
+      {description}
+    </p>
   </a>
-  <Datetime {...props} />
-  <p>{description}</p>
 </li>

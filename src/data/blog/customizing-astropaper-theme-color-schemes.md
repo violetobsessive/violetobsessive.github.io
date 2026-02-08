@@ -1,148 +1,250 @@
 ---
-author: Sat Naing
-pubDatetime: 2022-09-25T15:20:35Z
-modDatetime: 2026-01-09T15:00:15.170Z
-title: Customizing AstroPaper theme color schemes
-featured: false
+author: Keqi Chen
+pubDatetime: 2025-11-01T21:40:00Z
+modDatetime: 2025-11-01T00:16:00Z
+title: React Caching Mechanism — useMemo and useCallback
+slug: usememo-and-usecallback
+featured: true
 draft: false
 tags:
-  - color-schemes
-  - docs
-description:
-  How you can enable/disable light & dark mode; and customize color schemes
-  of AstroPaper theme.
+  - ReactJs
+description: useMemo and useCallback are caching mechanisms built into React. In this post, I'll explain how they work, when they're actually useful (and when they're not).
 ---
-
-This post will explain how you can enable/disable light & dark mode for the website. Moreover, you'll learn how you can customize color schemes of the entire website.
 
 ## Table of contents
 
-## Enable/disable light & dark mode
+## Why Does useMemo Exist?
 
-AstroPaper theme will include light and dark mode by default. In other words, there will be two color schemes\_ one for light mode and another for dark mode. This default behavior can be disabled in `SITE` configuration object.
+By design, React re-renders a component every time a **local** state or prop changes, or its **parent** re-renders. This helps keep state synced and updated, but it can become a problem when:
 
-```js file="src/config.ts"
-export const SITE = {
-  website: "https://astro-paper.pages.dev/", // replace this with your deployed domain
-  author: "Sat Naing",
-  profile: "https://satnaing.dev/",
-  desc: "A minimal, responsive and SEO-friendly Astro blog theme.",
-  title: "AstroPaper",
-  ogImage: "astropaper-og.jpg",
-  lightAndDarkMode: true, // [!code highlight]
-  postPerIndex: 4,
-  postPerPage: 4,
-  scheduledPostMargin: 15 * 60 * 1000, // 15 minutes
-  showArchives: true,
-  showBackButton: true, // show back button in post detail
-  editPost: {
-    enabled: true,
-    text: "Suggest Changes",
-    url: "https://github.com/satnaing/astro-paper/edit/main/",
-  },
-  dynamicOgImage: true,
-  lang: "en", // html lang code. Set this empty and default will be "en"
-  timezone: "Asia/Bangkok", // Default global timezone (IANA format) https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-} as const;
+- The computation is expensive (e.g., filtering thousands of items)
+- New objects or functions are created on every render, causing unnecessary child re-renders
+
+That's where `useMemo` and `useCallback` come in — they allow you to optimise performance by **caching** derived values or function references to avoid redundant work.
+
+## How useMemo Works
+
+`useMemo` acts like a small in-memory cache in React. Like any cache, it works based on cache keys. If the cache key hasn't changed, it returns the cached value. Otherwise, it recalculates.
+
+The cache key for `useMemo` is its **dependency array**. Here's an example of memoising an expensive calculation:
+
+```ts
+const expensiveValue = useMemo(() => {
+  return items.filter(item => item.price > 100).length;
+}, [items]); // Only recalculates when 'items' changes — otherwise it returns the cached value from the previous render
 ```
 
-To disable `light & dark mode` set `SITE.lightAndDarkMode` to `false`.
+When memoising a component, the cache keys are the **props** passed to it:
 
-## Choose initial color scheme
+```ts
+const Component = ({ count }: Props) => {
+  return <div>Count: {count}</div>;
+};
 
-By default, if we disable `SITE.lightAndDarkMode`, we will only get system's prefers-color-scheme.
-
-Thus, to choose an initial color scheme instead of prefers-color-scheme, we have to set color scheme in the `initialColorScheme` variable inside `theme.ts`.
-
-```ts file="src/scripts/theme.ts"
-// Initial color scheme
-// Can be "light", "dark", or empty string for system's prefers-color-scheme
-const initialColorScheme = ""; // "light" | "dark" // [!code hl]
-
-function getPreferTheme(): string {
-  // get theme data from local storage (user's explicit choice)
-  const currentTheme = localStorage.getItem("theme");
-  if (currentTheme) return currentTheme;
-
-  // return initial color scheme if it is set (site default)
-  if (initialColorScheme) return initialColorScheme;
-
-  // return user device's prefer color scheme (system fallback)
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
-// ...
+export default React.memo(Component);
+// Only re-renders when 'count' prop changes
 ```
 
-The **initialColorScheme** variable can hold two values\_ `"light"`, `"dark"`. You can leave the empty string (default) if you don't want to specify an initial color scheme.
+This diagram represents the flow clearly:
 
-- `""` - system's prefers-color-scheme. (default)
-- `"light"` - use light mode as initial color scheme.
-- `"dark"` - use dark mode as initial color scheme.
-
-<details>
-<summary>Why initialColorScheme is not inside config.ts?</summary>
-To avoid color flickering on page reload, we have to place the theme initialization JavaScript code as early as possible when the page loads. The theme script is split into two parts: a minimal inline script in the `<head>` that sets the theme immediately, and the full script that loads asynchronously. This approach prevents FOUC (Flash of Unstyled Content) while maintaining optimal performance.
-</details>
-
-## Customize color schemes
-
-Both light & dark color schemes of AstroPaper theme can be customized in the `global.css` file.
-
-```css file="src/styles/global.css"
-@import "tailwindcss";
-@import "./typography.css";
-
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
-
-:root,
-html[data-theme="light"] {
-  --background: #fdfdfd;
-  --foreground: #282728;
-  --accent: #006cac;
-  --muted: #e6e6e6;
-  --border: #ece9e9;
-}
-
-html[data-theme="dark"] {
-  --background: #212737;
-  --foreground: #eaedf3;
-  --accent: #ff6b01;
-  --muted: #343f60bf;
-  --border: #ab4b08;
-}
-/* ... */
+```ts
+Component is about to re-render
+      ↓
+Compare dependency array/props
+      ↓
+Changed? ───▶ Yes → Recompute and store new result
+      │
+      └────▶ No  → Return cached value
 ```
 
-In the AstroPaper theme, the `:root` and `html[data-theme="light"]` selectors define the light color scheme, while `html[data-theme="dark"]` defines the dark color scheme.
+## How useCallback Works
 
-To customize your own color scheme, specify your light colors inside `:root, html[data-theme="light"]`, and your dark colors inside `html[data-theme="dark"]`.
+`useCallback` is similar to `useMemo`, but it caches the **reference** of a function instead of a computed value.
 
-Here is the detail explanation of color properties.
+This matters because functions in JavaScript are reference types. Every time a component re-renders, functions defined inside it get new references — even if their implementation is identical. This can cause child components to re-render unnecessarily.
 
-| Color Property | Definition & Usage                                            |
-| -------------- | ------------------------------------------------------------- |
-| `--background` | Primary color of the website. Usually the main background.    |
-| `--foreground` | Secondary color of the website. Usually the text color.       |
-| `--accent`     | Accent color of the website. Link color, hover color etc.     |
-| `--muted`      | Card and scrollbar background color for hover state etc.      |
-| `--border`     | Border color. Used for border utilities and visual separation |
-
-Here is an example of changing the light color scheme.
-
-```css file="src/styles/global.css"
-/* ... */
-:root,
-html[data-theme="light"] {
-  --background: #f6eee1;
-  --foreground: #012c56;
-  --accent: #e14a39;
-  --muted: #efd8b0;
-  --border: #dc9891;
-}
-/* ... */
+```ts
+const handleClick = useCallback(() => {
+  setCount(c => c + 1);
+}, []); // Function reference stays the same across re-renders
 ```
 
-> Check out some [predefined color schemes](https://astro-paper.pages.dev/posts/predefined-color-schemes/) AstroPaper has already crafted for you.
+## When to Use Them
+
+`useMemo` and `useCallback` are most helpful in two cases:
+
+### 1. Expensive Calculations - to avoid recomputing derived data unnecessarily
+
+```ts
+// Filtering/sorting large datasets (1000+ items)
+const filteredItems = useMemo(() => {
+  return items
+    .filter(item => item.category === selectedCategory)
+    .sort((a, b) => b.price - a.price);
+}, [items, selectedCategory]);
+
+// Complex mathematical computations
+const statistics = useMemo(() => {
+  return {
+    mean: calculateMean(data),
+    median: calculateMedian(data),
+    stdDev: calculateStandardDeviation(data)
+  };
+}, [data]);
+
+// Deep object transformations
+const transformedData = useMemo(() => {
+  return rawData.map(item => ({
+    ...item,
+    nested: processNestedStructure(item.children)
+  }));
+}, [rawData]);
+```
+
+**Without `useMemo`:** These calculations run on every render, even if `items`, `data`, or `rawData` haven't changed.
+
+**With `useMemo`:** Calculations only run when dependencies actually change.
+
+### 2. Stable references — to prevent avoidable re-renders of memoised children
+
+```ts
+const Parent = () => {
+  const [count, setCount] = useState(0);
+
+  const handleClick = () => setCount(count + 1);
+
+  return <Child onClick={handleClick} />;
+};
+```
+
+When `handleClick` is triggered, here's what happens:
+
+1. `Parent`'s `count` state updates
+2. `Parent` re-renders
+3. `handleClick` gets a **new reference**
+4. `Child` receives a different `onClick` prop
+5. `Child` re-renders (even though the function does the same thing)
+
+### The Solution: Both useCallback AND React.memo
+
+To prevent unnecessary child re-renders, you need **both**:
+
+```ts
+const Parent = () => {
+  const [count, setCount] = useState(0);
+
+  // 1. Stabilise the function reference
+  const handleClick = useCallback(() => {
+    setCount(c => c + 1);
+  }, []);
+
+  return <Child onClick={handleClick} />;
+};
+
+// 2. Memoise the child component
+const Child = React.memo(({ onClick }: Props) => {
+  return <button onClick={onClick}>Click me</button>;
+});
+```
+
+Now when `Parent` re-renders:
+
+- `handleClick` keeps the same reference (thanks to `useCallback`)
+- `Child`'s props don't change (same reference)
+- `React.memo` prevents `Child` from re-rendering
+
+Note that `useCallback` alone doesn’t stop re-renders — it only stabilises the function reference. The parent component will still re-render when its state changes, and without `React.memo`, the child will re-render too. That's why Both are needed to make this optimisation effective.
+
+### A Better Approach: Avoid Passing setState Down
+
+While the above solution works, please be aware that **it's generally not good practice to pass `setState` functions to child components** in the first place. A better pattern is to lift the state down or use composition:
+
+```ts
+// Better: Keep state local to where it's used
+const Parent = () => {
+  return <Child />;
+};
+
+const Child = () => {
+  const [count, setCount] = useState(0);
+  const handleClick = () => setCount(count + 1);
+
+  return <button onClick={handleClick}>Count: {count}</button>;
+};
+```
+
+Or use composition to avoid prop drilling:
+
+```ts
+const Parent = () => {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <Display count={count} />
+      <button onClick={() => setCount(c => c + 1)}>Increment</button>
+    </div>
+  );
+};
+```
+
+## Should You Memoise by Default?
+
+Some teams choose to memoise by default — wrapping every component in `React.memo` and using `useCallback` everywhere — arguing that CPU and memory costs are negligible and that consistency outweighs the overhead of case-by-case decisions.
+
+Others prefer to optimise only when profiling shows a real benefit, keeping the codebase cleaner and easier to reason about because they believe **readability and maintainability** matters more. Consider this example:
+
+```ts
+// Over-memoised code is harder to read and maintain
+const Component = () => {
+  const value1 = useMemo(() => prop1 + prop2, [prop1, prop2]);
+  const value2 = useMemo(() => value1 * 2, [value1]);
+  const handleClick = useCallback(() => doSomething(), []);
+  const handleChange = useCallback(() => doSomethingElse(), []);
+  const data = useMemo(() => ({ value1, value2 }), [value1, value2]);
+
+  return <Child data={data} onClick={handleClick} onChange={handleChange} />;
+};
+```
+
+This approach may:
+
+- ❌ Makes code harder to understand at a glance
+- ❌ Increases cognitive load when debugging
+- ❌ Creates more opportunities for bugs (stale closures, missing dependencies)
+- ❌ Makes the codebase less approachable for new team members
+
+I won't say one approach is _definitively better_ than the other — both perspectives have a valid point. What matters most is understanding what you're trading off and developing an optimisation strategy accordingly.
+
+## Conclusion
+
+`useMemo` and `useCallback` are optimisation tools with trade-offs worth considering.
+
+**When they're useful:**
+
+- Passing callbacks to memoised child components
+- Expensive calculations
+- Confirmed performance issues
+
+**What you trade off:**
+
+- Code readability and simplicity
+- Easier debugging and maintenance
+- Lower cognitive load for your team
+
+## Useful Links
+
+- [**How to useMemo and useCallback: you can remove most of them**](https://www.developerway.com/posts/how-to-use-memo-use-callback) —  
+  A deep dive explaining why overusing these hooks often doesn’t help and how React’s reconciliation already optimises many cases.
+
+- [**Why We Memo All the Things**](https://attardi.org/why-we-memo-all-the-things/) —  
+  A counterpoint perspective arguing for consistent memoisation to reduce cognitive cost in large teams.
+
+- [**Overusing useMemo and useCallback — Kent C. Dodds**](https://kentcdodds.com/blog/usememo-and-usecallback) —  
+  Kent’s explanation on why these hooks should be used sparingly and how to measure if they’re actually improving performance.
+
+- [**Dan Abramov — When to useMemo and useCallback (Twitter Thread)**](https://twitter.com/dan_abramov/status/1305855005932818432) —  
+  A concise summary by React’s co-author clarifying when memoisation is worth it and when it’s just noise.
+
+- [**React Performance — Avoid Premature Optimisation**](https://react.dev/learn/keeping-components-pure#avoid-premature-optimizations) —  
+  From the official docs: start with clean, pure components first, then optimise based on profiling data.

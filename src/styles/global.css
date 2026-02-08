@@ -21,6 +21,7 @@ html[data-theme="dark"] {
 }
 
 @theme inline {
+  --font-google-sans-code: Georgia, serif;
   --font-app: var(--font-google-sans-code);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -48,6 +49,45 @@ html[data-theme="dark"] {
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+}
+@layer components {
+  /* LIGHT mode: white inner shading by default */
+  html[data-theme="light"] .card-shade {
+    background-image: linear-gradient(180deg, #f3e8d0, #fcf0d7 50%);
+  }
+
+  /* LIGHT mode hover: slightly reduce the white shading */
+  html[data-theme="light"] .card-shade:hover {
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.14),
+        rgba(255, 255, 255, 0) 55%
+      ),
+      linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0) 65%
+      );
+  }
+
+  /* DARK mode: black inner shading by default */
+  html[data-theme="dark"] .card-shade {
+    background-image:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0) 100%),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0) 100%);
+  }
+
+  /* DARK mode hover: reduce black shading */
+  html[data-theme="dark"] .card-shade:hover {
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0) 45%
+      ),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 60%);
   }
 }
 
