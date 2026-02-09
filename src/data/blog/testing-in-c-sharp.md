@@ -9,17 +9,18 @@ draft: false
 tags:
   - Testing
   - C#
-description: TDD, BDD and DDD are different approaches in software development that emphasize testing and collaboration. I'll explain the difference in this post with concrete code examples.
+description: They are different approaches in software development that emphasize testing and collaboration. I'll explain the differences in this post with concrete C# code examples.
 ---
 
 ## Table of contents
 
-## Why Does useMemo Exist?
+## Why Does these methodologies Exist?
 
-By design, React re-renders a component every time a **local** state or prop changes, or its **parent** re-renders. This helps keep state synced and updated, but it can become a problem when:
+In today's software development pipeline, it can repeatedly runs into the same few problems:
 
-- The computation is expensive (e.g., filtering thousands of items)
-- New objects or functions are created on every render, causing unnecessary child re-renders
+- Disagreement about what the software should do until late (requirements ambiguity).
+- Code becomes hard to change without breaking things (fragility).
+- Business rules get changed last minute
 
 That's where `useMemo` and `useCallback` come in — they allow you to optimise performance by **caching** derived values or function references to avoid redundant work.
 
