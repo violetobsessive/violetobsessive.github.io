@@ -16,237 +16,172 @@ description: They are different approaches in software development that emphasiz
 
 ## Why Does these methodologies Exist?
 
-In today's software development pipeline, it can repeatedly runs into the same few problems:
+In today's software development pipeline, it can repeatedly runs into the same problems:
 
-- Disagreement about what the software should do until late (requirements ambiguity).
-- Code becomes hard to change without breaking things (fragility).
-- Business rules get changed last minute
+- Requirements ambiguity: disagreement about business rules until late.
+- Infrastructure decoupling: Code becomes hard to change without breaking things.
 
-That's where `useMemo` and `useCallback` come in — they allow you to optimise performance by **caching** derived values or function references to avoid redundant work.
+That's where these practices come in — they response to these recurring challenges in everyday work. They each optimizes a different part of the system —— building safely (TDD), agreeing on behavior (BDD), and structuring business logic (DDD).
 
-## How useMemo Works
+## How TDD works
 
-`useMemo` acts like a small in-memory cache in React. Like any cache, it works based on cache keys. If the cache key hasn't changed, it returns the cached value. Otherwise, it recalculates.
+`Test-Driven Development (TDD)` typically means that automated tests get written before the actual code. You start by adding a test that fails, then implementing just enough code to make that test pass, before doing the final clean up and refactor.
 
-The cache key for `useMemo` is its **dependency array**. Here's an example of memoising an expensive calculation:
+This tight loop gives you constant feedback, makes bugs easier to catch early, and mostly importantly, it makes your changes more flexible, and allow a cleaner design.
 
-```ts
-const expensiveValue = useMemo(() => {
-  return items.filter(item => item.price > 100).length;
-}, [items]); // Only recalculates when 'items' changes — otherwise it returns the cached value from the previous render
+Here's an example of TDD.
+
+Imagine we have a bank account that is retrieved and stored through `IBankAccountRepository`, and that exposes a `depositToAccont` method;
+`BankAccountService` passes in `id`, `amount`, calls depositToAccount method, and then persists the updated account using the repository.
+
+```csharp
+public interface IBankAccountRepository
+{
+    void Store(BankAccount account);
+    BankAccount Get(int id);
+}
 ```
 
-When memoising a component, the cache keys are the **props** passed to it:
+```csharp
+public class BankAccountService(IBankAccountRepository _repository)
+{
+    public void DepositToAccount(int id, decimal amount)
+    {
+        var account = _repository.Get(id);
+        account.Deposit(amount);
+        _repository.Store(account);
+    }
+}
 
-```ts
-const Component = ({ count }: Props) => {
-  return <div>Count: {count}</div>;
-};
-
-export default React.memo(Component);
-// Only re-renders when 'count' prop changes
 ```
 
-This diagram represents the flow clearly:
+Here's a test-driven development approach in NSubstitute:
 
-```ts
-Component is about to re-render
-      ↓
-Compare dependency array/props
-      ↓
-Changed? ───▶ Yes → Recompute and store new result
-      │
-      └────▶ No  → Return cached value
+```csharp
+     [Fact]
+    public void Using_mocks()
+    {
+        // Arrange
+        var repo = Substitute.For<IBankAccountRepository>();
+        var existingAccount = Substitute.For<BankAccount>(123, 0m);
+
+        repo.Get(123).Returns(existingAccount);
+
+        var sut = new BankAccountService(repo);
+
+        // Act
+        sut.DepositToAccount(123, 100m);
+
+        // Assert
+        repo.Received().Get(123);
+        existingAccount.Received().Deposit(100m);
+        repo.Received().Store(existingAccount);
+    }
 ```
 
-## How useCallback Works
+Before implementation, we want to drive the beahaviour of `depositToAccont`, making sure it
 
-`useCallback` is similar to `useMemo`, but it caches the **reference** of a function instead of a computed value.
+- gets the account
+- deposit the specified amount
+- store the correct amount
 
-This matters because functions in JavaScript are reference types. Every time a component re-renders, functions defined inside it get new references — even if their implementation is identical. This can cause child components to re-render unnecessarily.
+In order to do that, we mock the repository, create a substitute for bank account to expose the method/service logic under test.
 
-```ts
-const handleClick = useCallback(() => {
-  setCount(c => c + 1);
-}, []); // Function reference stays the same across re-renders
+The test focuses on one behavior —— deposit money into an account via `BankAccountService`. This approaches drive clearer structure, and facilitates the safety of refactoring.
+
+## How BDD works
+
+`Behaviour-Driven Development (BDD)` evolved from TDD but focuses on business value and user behavior rather than implementation details. It begins by clarifying desired behavior the team wants the code to behave.
+
+Then we describe that behaviour in **Gherkin** using **Given–When–Then** statements. It serve as a guide for implementing code that satisfies the specified outcomes. This is a more common approaches in corporate/enterprise settings.
+
+Here's a behaviour-driven development approach in NSubstitute with the same example:
+
+```csharp
+  [Fact]
+    public void Using_mocks()
+    {
+        // Given
+        var repo = Substitute.For<IBankAccountRepository>();
+        var existingAccount = Substitute.For<BankAccount>(123, 0m);
+
+        repo.Get(123).Returns(existingAccount);
+
+        var service = new BankAccountService(repo);
+
+        // When
+        service.DepositToAccount(123, 50m);
+
+        // Then
+        existingAccount.Received().Deposit(50m);
+        repo.Received().Store(existingAccount);
+    }
 ```
 
-## When to Use Them
+In this example, Given–When–Then is as follow -
 
-`useMemo` and `useCallback` are most helpful in two cases:
+Given an existing bank account
+When I deposit money
+Then the account is updated and persisted.
 
-### 1. Expensive Calculations - to avoid recomputing derived data unnecessarily
+More specifically,
+**Given**:
 
-```ts
-// Filtering/sorting large datasets (1000+ items)
-const filteredItems = useMemo(() => {
-  return items
-    .filter(item => item.category === selectedCategory)
-    .sort((a, b) => b.price - a.price);
-}, [items, selectedCategory]);
+- repo and existingAccount are created via NSubstitute.
+- repo.Get(123).Returns(existingAccount); sets up the context: “There is an account with ID 123.”
 
-// Complex mathematical computations
-const statistics = useMemo(() => {
-  return {
-    mean: calculateMean(data),
-    median: calculateMedian(data),
-    stdDev: calculateStandardDeviation(data)
-  };
-}, [data]);
+**When**:
 
-// Deep object transformations
-const transformedData = useMemo(() => {
-  return rawData.map(item => ({
-    ...item,
-    nested: processNestedStructure(item.children)
-  }));
-}, [rawData]);
+- service.DepositToAccount(123, 50m);
+- This is the event/trigger in the scenario: “When depositing 50 into account 123.”
+
+**Then**:
+
+- existingAccount.Received().Deposit(50m);
+  - the account should receive a deposit of 50.
+- repo.Received().Store(existingAccount);
+  - updated account should be persisted.
+
+This approach is mostly beneficial for readablity and clear structure of requirements, commonly used to create JIRA tickets. It's still interaction-based, but phrased in business/behavior terms rather than just "calls this method."
+
+## How DDD works
+
+`Domain-Driven Design (DDD)` focuses on modeling software to match the business domain. As systems grow, the hardest part often becomes the rules of the business, not the tech.
+
+In complex domains (banking, insurance, logistics, marketplaces), rules are numerous, evolving, full of exceptions, and deeply interconnected. Without a domain-centered design, logic ends up scattered i.e. validation in controllers, calculations in services.
+
+DDD emphasizes collaboration between technical and domain experts to create a shared understanding and language around business concepts.
+
+Here's a domain-driven development approach in NSubstitute with the same example:
+
+```csharp
+[Fact]
+    public void DepositToAccount_Represents_A_Money_Inflow_For_The_BankAccount_Aggregate()
+    {
+        // Arrange (Application service context)
+        var repo = Substitute.For<IBankAccountRepository>();
+        var bankAccountAggregate = Substitute.For<BankAccount>(123, 200m); // existing balance
+
+        repo.Get(123).Returns(bankAccountAggregate);
+
+        var appService = new BankAccountService(repo);
+
+        // Act (Application command)
+        appService.DepositToAccount(123, 80m);
+
+        // Assert (Domain orchestration expectations)
+        bankAccountAggregate.Received().Deposit(80m);
+        repo.Received().Store(bankAccountAggregate);
+    }
 ```
 
-**Without `useMemo`:** These calculations run on every render, even if `items`, `data`, or `rawData` haven't changed.
+DDD treats `BankAccountService` as an **application service** and `BankAccount` as an **aggregate root**. The test verifies that a command (`DepositToAccount`) results in the correct domain operation and persistence. Essentially:
 
-**With `useMemo`:** Calculations only run when dependencies actually change.
+- BankAccountService = application service.
+- IBankAccountRepository = domain repository abstraction.
+- BankAccount = aggregate root (we’re mocking it just to verify orchestration).
 
-### 2. Stable references — to prevent avoidable re-renders of memoised children
+The test is making sure that `DepositToAccount` command orchestrates the right steps in the domain model —— it must load the aggregate it’s going to modify. As an application service should not directly manipulate raw data; it should:
 
-```ts
-const Parent = () => {
-  const [count, setCount] = useState(0);
-
-  const handleClick = () => setCount(count + 1);
-
-  return <Child onClick={handleClick} />;
-};
-```
-
-When `handleClick` is triggered, here's what happens:
-
-1. `Parent`'s `count` state updates
-2. `Parent` re-renders
-3. `handleClick` gets a **new reference**
-4. `Child` receives a different `onClick` prop
-5. `Child` re-renders (even though the function does the same thing)
-
-### The Solution: Both useCallback AND React.memo
-
-To prevent unnecessary child re-renders, you need **both**:
-
-```ts
-const Parent = () => {
-  const [count, setCount] = useState(0);
-
-  // 1. Stabilise the function reference
-  const handleClick = useCallback(() => {
-    setCount(c => c + 1);
-  }, []);
-
-  return <Child onClick={handleClick} />;
-};
-
-// 2. Memoise the child component
-const Child = React.memo(({ onClick }: Props) => {
-  return <button onClick={onClick}>Click me</button>;
-});
-```
-
-Now when `Parent` re-renders:
-
-- `handleClick` keeps the same reference (thanks to `useCallback`)
-- `Child`'s props don't change (same reference)
-- `React.memo` prevents `Child` from re-rendering
-
-Note that `useCallback` alone doesn’t stop re-renders — it only stabilises the function reference. The parent component will still re-render when its state changes, and without `React.memo`, the child will re-render too. That's why Both are needed to make this optimisation effective.
-
-### A Better Approach: Avoid Passing setState Down
-
-While the above solution works, please be aware that **it's generally not good practice to pass `setState` functions to child components** in the first place. A better pattern is to lift the state down or use composition:
-
-```ts
-// Better: Keep state local to where it's used
-const Parent = () => {
-  return <Child />;
-};
-
-const Child = () => {
-  const [count, setCount] = useState(0);
-  const handleClick = () => setCount(count + 1);
-
-  return <button onClick={handleClick}>Count: {count}</button>;
-};
-```
-
-Or use composition to avoid prop drilling:
-
-```ts
-const Parent = () => {
-  const [count, setCount] = useState(0);
-
-  return (
-    <div>
-      <Display count={count} />
-      <button onClick={() => setCount(c => c + 1)}>Increment</button>
-    </div>
-  );
-};
-```
-
-## Should You Memoise by Default?
-
-Some teams choose to memoise by default — wrapping every component in `React.memo` and using `useCallback` everywhere — arguing that CPU and memory costs are negligible and that consistency outweighs the overhead of case-by-case decisions.
-
-Others prefer to optimise only when profiling shows a real benefit, keeping the codebase cleaner and easier to reason about because they believe **readability and maintainability** matters more. Consider this example:
-
-```ts
-// Over-memoised code is harder to read and maintain
-const Component = () => {
-  const value1 = useMemo(() => prop1 + prop2, [prop1, prop2]);
-  const value2 = useMemo(() => value1 * 2, [value1]);
-  const handleClick = useCallback(() => doSomething(), []);
-  const handleChange = useCallback(() => doSomethingElse(), []);
-  const data = useMemo(() => ({ value1, value2 }), [value1, value2]);
-
-  return <Child data={data} onClick={handleClick} onChange={handleChange} />;
-};
-```
-
-This approach may:
-
-- ❌ Makes code harder to understand at a glance
-- ❌ Increases cognitive load when debugging
-- ❌ Creates more opportunities for bugs (stale closures, missing dependencies)
-- ❌ Makes the codebase less approachable for new team members
-
-I won't say one approach is _definitively better_ than the other — both perspectives have a valid point. What matters most is understanding what you're trading off and developing an optimisation strategy accordingly.
-
-## Conclusion
-
-`useMemo` and `useCallback` are optimisation tools with trade-offs worth considering.
-
-**When they're useful:**
-
-- Passing callbacks to memoised child components
-- Expensive calculations
-- Confirmed performance issues
-
-**What you trade off:**
-
-- Code readability and simplicity
-- Easier debugging and maintenance
-- Lower cognitive load for your team
-
-## Useful Links
-
-- [**How to useMemo and useCallback: you can remove most of them**](https://www.developerway.com/posts/how-to-use-memo-use-callback) —  
-  A deep dive explaining why overusing these hooks often doesn’t help and how React’s reconciliation already optimises many cases.
-
-- [**Why We Memo All the Things**](https://attardi.org/why-we-memo-all-the-things/) —  
-  A counterpoint perspective arguing for consistent memoisation to reduce cognitive cost in large teams.
-
-- [**Overusing useMemo and useCallback — Kent C. Dodds**](https://kentcdodds.com/blog/usememo-and-usecallback) —  
-  Kent’s explanation on why these hooks should be used sparingly and how to measure if they’re actually improving performance.
-
-- [**Dan Abramov — When to useMemo and useCallback (Twitter Thread)**](https://twitter.com/dan_abramov/status/1305855005932818432) —  
-  A concise summary by React’s co-author clarifying when memoisation is worth it and when it’s just noise.
-
-- [**React Performance — Avoid Premature Optimisation**](https://react.dev/learn/keeping-components-pure#avoid-premature-optimizations) —  
-  From the official docs: start with clean, pure components first, then optimise based on profiling data.
+- Load the aggregate through its repository.
+- Let the aggregate enforce its own invariants (rules).
